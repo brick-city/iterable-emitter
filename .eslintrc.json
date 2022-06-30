@@ -1,0 +1,28 @@
+{
+    "root":true,
+    "env": {
+        "node": true,
+        "es2021": true
+    },
+    "extends": "airbnb-base", 
+    "rules": {
+        "linebreak-style":["error","windows"],
+        "padded-blocks": ["error", "always", { "allowSingleLineBlocks": true }],
+        "object-property-newline": ["error", { "allowAllPropertiesOnSameLine": false }],
+        "function-paren-newline": ["error", "multiline"],
+        "indent": ["error", 4],
+        "max-len": ["error", { "code": 150 }],
+        "no-shadow": ["error", { "builtinGlobals": false }],
+        "spaced-comment": ["error", "always", { "exceptions": [],"block": { "balanced": true }  }] ,
+        "lines-around-comment": ["error", { "beforeBlockComment": true, "afterBlockComment": false , "allowObjectStart": true}],
+        "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"]
+    },
+    "parser": "@babel/eslint-parser",
+    "parserOptions": {
+        "ecmaVersion": 12,
+        "sourceType": "module",
+        "babelOptions": {
+            "plugins": ["@babel/plugin-proposal-class-properties", "@babel/plugin-proposal-private-methods"]
+        }
+    }
+}
