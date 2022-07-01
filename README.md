@@ -12,6 +12,7 @@ The queue has a high water mark that can limit memory requirements for the queue
 - [Usage](#usage)
 - [Support](#support)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## Installation
 
@@ -55,17 +56,6 @@ try {
 ```
 
 
-Replace the contents of `README.md` with your project's:
-
-- Name
-- Description
-- Installation instructions
-- Usage instructions
-- Support instructions
-- Contributing instructions
-- License
-
-Feel free to remove any sections that aren't applicable to your project.
 
 ## Support
 
