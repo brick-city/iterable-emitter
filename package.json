@@ -1,7 +1,7 @@
 {
-  "name": "iterable-emitter",
+  "name": "@brick-city/iterable-emitter",
   "version": "0.0.1",
-  "description": "This utility turns a streaming emitter into an iterable, and provides a buffer",
+  "description": "This utility turns a streaming emitter into an iterable, buffers the stream of events, and will pause & resume the emitter.",
   "main": "index.js",
   "types": "index.d.ts",
   "type":"module",

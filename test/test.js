@@ -1,6 +1,7 @@
 import { createRequire } from 'module';
 // eslint-disable-next-line import/extensions
 import process from 'process';
+import EventEmitter from 'eventemitter3';
 import { IterableEmitter } from '../index.js';
 
 process.on('beforeExit', (code) => { console.log('about to exit with code:', code); });
@@ -24,7 +25,7 @@ async function sleep(ms) {
 
 const require = createRequire(import.meta.url);
 
-const EventEmitter = require('eventemitter3');
+// const EventEmitter = require('eventemitter3');
 
 class NumberStream extends EventEmitter {
 
