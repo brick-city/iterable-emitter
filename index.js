@@ -3,6 +3,10 @@
  * @typedef {import('./index.js').iterableEmitterValidatedOptions} iterableEmitterValidatedOptions
  */
 
+// TODO: We need to handle timeouts
+// TODO: We need to handle data events that occur after resolutionEvent or rejectionEvent, right now rethrow if its iterating
+// TODO: Advance statistics ?
+
 import { klona } from 'klona/json';
 import { createRequire } from 'module';
 import { pEvent } from 'p-event';
@@ -182,6 +186,8 @@ class IterableEmitter extends EventEmitter {
 
     #paused = false;
 
+    #iterating = false;
+
     #boundHandlers = {
         data: undefined,
         resolved: undefined,
@@ -339,6 +345,17 @@ class IterableEmitter extends EventEmitter {
 
     #data(...args) {
 
+        if (this.#done) {
+
+            // TODO: If this is not iterating do we need to do something ?
+
+            if (this.#iterating) {
+
+                this.#rejected(new Error('dataEvent received after resolutionEvent or rejectionEvent'));
+
+            }
+
+        } else
         if (!this.#options.preFilter || this.#options.preFilter(...args)) {
 
             if (this.#options.transform) {
@@ -430,6 +447,8 @@ class IterableEmitter extends EventEmitter {
 
     async* [Symbol.asyncIterator]() {
 
+        this.#iterating = true;
+
         while (this.#error === false && (this.#done === false || (this.#done && this.#length > 0))) {
 
             if (this.#length === 0) {
@@ -450,6 +469,8 @@ class IterableEmitter extends EventEmitter {
             }
 
         }
+
+        this.#iterating = false;
 
         if (this.#error) {
 
