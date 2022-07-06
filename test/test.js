@@ -90,6 +90,8 @@ const b = new IterableEmitter(a, {
     lowWaterMark: 50,
     preFilter: (r) => !(r % 3),
     transform: (r) => r * 13,
+    logLevel: 'DEBUG',
+    logger: (logEntry) => { console.log(logEntry); },
 
 });
 

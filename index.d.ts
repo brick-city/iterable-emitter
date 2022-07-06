@@ -125,7 +125,7 @@ type iterableEmitterOptionBase = {
      * 
      * 
      */
-    preFilter?:{(...args:any[]):boolean}
+    preFilter?:{(...args:any[]):boolean};
 
     /**
      * 
@@ -141,7 +141,7 @@ type iterableEmitterOptionBase = {
      * 
      */
   
-    resumeFunction:{():void}
+    resumeFunction:{():void};
 
     /**
      * 
@@ -157,8 +157,23 @@ type iterableEmitterOptionBase = {
       * 
       */
    
-     resumeMethod:string
+     resumeMethod:string;
 
+     /**
+      * 
+      * Logging level, should be one of "DEBUG"|"INFO"|"WARN"|"ERROR"
+      * 
+      */
+
+     logLevel?:"DEBUG" | "INFO" | "WARN" | "ERROR";
+
+     /**
+      * 
+      * Logger to pass the log messages to
+      * 
+      */
+
+    logger?:{(arg0: iterableEmitterLogEntryObject):void};
 
 }
 
@@ -194,9 +209,33 @@ type iterableEmitterOptionBase = {
 
         initializeBuffer:boolean;
 
+
+        /**
+         * Internal logging levels
+         */
+        logDebug:boolean;
+        logInfo:boolean;
+        logWarn:boolean;
+        logError:boolean;
+
+
        }
 
+/**
+ * 
+ * Log Entry Object, will be sent to the function handling logging
+ * 
+ */
+export interface iterableEmitterLogEntryObject {
 
+    logLevel:"DEBUG" | "INFO" | "WARN" | "ERROR";
+    message:string;
+    dateTime:Date;
+    id:string;
+    error?:Error;
+    payload?:object;
+    stats?:object;
 
+}
 
 

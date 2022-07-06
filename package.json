@@ -4,7 +4,7 @@
   "description": "This utility turns a streaming emitter into an iterable, buffers the stream of events, and will pause & resume the emitter.",
   "main": "index.js",
   "types": "index.d.ts",
-  "type":"module",
+  "type": "module",
   "scripts": {
     "test": "node ./test/test.js"
   },
@@ -34,6 +34,7 @@
     "sinon": "^13.0.1"
   },
   "dependencies": {
+    "@lukeed/uuid": "^2.0.0",
     "denque": "^2.0.1",
     "eventemitter3": "^4.0.7",
     "klona": "^2.0.5",
