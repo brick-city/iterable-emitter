@@ -317,17 +317,19 @@ class IterableEmitter extends EventEmitter {
 
         this.#options.resolutionEvent.forEach((event) => {
 
-            emitter.on(event, this.#boundHandlers.resolved);
+            this.#boundHandlers.resolved[event] = this.#resolved.bind(this, event);
+
+            emitter.on(event, this.#boundHandlers.resolved[event]);
 
             this.#listeners.push({
                 emitter,
                 event,
-                handler: this.#boundHandlers.resolved,
+                handler: this.#boundHandlers.resolved[event],
             });
 
             this.#logDebug('resolutionEvent listener attached', {
                 event,
-                handler: this.#boundHandlers.resolved.name,
+                handler: this.#boundHandlers.resolved[event],
             });
 
         });
