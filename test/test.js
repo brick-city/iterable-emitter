@@ -96,9 +96,21 @@ const b = new IterableEmitter(a, {
 
 });
 
-await sleep(1000);
+// await sleep(1000);
 
 a.start();
+
+await sleep(10000);
+
+const ai = b.iterator();
+const bi = b.iterator();
+
+await ai.next();
+await bi.next();
+await ai.next();
+await bi.next();
+
+/*
 try {
 
     for await (const val of b) {
@@ -120,7 +132,7 @@ try {
     }
 
 } catch (e) { console.log(e); }
-
+*/
 console.log('out of here');
 
 console.log(b.totalLength, b.totalReturned, b.totalFiltered, b.length);

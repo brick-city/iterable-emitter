@@ -15,7 +15,10 @@
         "no-shadow": ["error", { "builtinGlobals": false }],
         "spaced-comment": ["error", "always", { "exceptions": [],"block": { "balanced": true }  }] ,
         "lines-around-comment": ["error", { "beforeBlockComment": true, "afterBlockComment": false , "allowObjectStart": true}],
-        "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"]
+        "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
+        "import/no-unresolved": 0, // Turn off "Unable to resolve path to module ..." error
+        "import/extensions": 0 // Turn off "Missing file extension for ..." error
+
     },
     "parser": "@babel/eslint-parser",
     "parserOptions": {
@@ -25,4 +28,5 @@
             "plugins": ["@babel/plugin-proposal-class-properties", "@babel/plugin-proposal-private-methods"]
         }
     }
+
 }

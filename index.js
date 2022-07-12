@@ -9,15 +9,13 @@
 // TODO: Logger integration
 
 import { klona } from 'klona/json';
-import { createRequire } from 'module';
 import { pEvent } from 'p-event';
 import { v4 as uuid } from '@lukeed/uuid';
 import ow from 'ow';
-
-const require = createRequire(import.meta.url);
-
-const EventEmitter = require('eventemitter3');
-const Denque = require('denque');
+import EventEmitter from 'eventemitter3';
+import Denque from 'denque';
+// const EventEmitter = require('eventemitter3');
+// const Denque = require('denque');
 
 const optionDefaults = {
     highWaterMark: 1000,
@@ -604,6 +602,12 @@ class IterableEmitter extends EventEmitter {
         logEntry.error = error;
 
         this.#options.logger(logEntry);
+
+    }
+
+    iterator() {
+
+        return this[Symbol.asyncIterator]();
 
     }
 
