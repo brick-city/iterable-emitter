@@ -558,6 +558,7 @@ class IterableEmitter extends EventEmitter {
             message,
             dateTime: new Date(),
             id: this.#id,
+            stats: this.stats,
         };
 
         if (payload) logEntry.payload = klona(payload);
@@ -571,8 +572,6 @@ class IterableEmitter extends EventEmitter {
         if (!this.#options.logDebug) return;
 
         const logEntry = this.#logBase('DEBUG', message, payload);
-
-        logEntry.stats = this.stats;
 
         this.#options.logger(logEntry);
 
