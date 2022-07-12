@@ -12,6 +12,7 @@ import { klona } from 'klona/json';
 import { createRequire } from 'module';
 import { pEvent } from 'p-event';
 import { v4 as uuid } from '@lukeed/uuid';
+import ow from 'ow';
 
 const require = createRequire(import.meta.url);
 
@@ -22,6 +23,29 @@ const optionDefaults = {
     highWaterMark: 1000,
     lowWaterMark: 500,
     initializeBuffer: true,
+    rejectionEvent: 'error',
+};
+
+const argValidation = {
+    initializeBuffer: ow.boolean,
+    highWaterMark: ow.number.integerOrInfinite.not.negative,
+    lowWaterMark: ow.number.integerOrInfinite.not.negative,
+    dataEvent: ow.string,
+    transform: ow.optional.function,
+    preFilter: ow.optional.function,
+    pauseFunction: ow.optional.function,
+    resumeFunction: ow.optional.function,
+    pauseMethod: ow.optional.string,
+    resumeMethod: ow.optional.string,
+    resolutionEvent: ow.array.ofType(ow.string),
+    rejectionEvent: ow.array.ofType(ow.string),
+    logger: ow.optional.function,
+    logLevel: ow.optional.string.oneOf(['INFO', 'DEBUG', 'WARN', 'ERROR']),
+    timeout: ow.optional.number.integerOrInfinite.not.negative,
+    logDebug: ow.boolean,
+    logInfo: ow.boolean,
+    logWarn: ow.boolean,
+    logError: ow.boolean,
 };
 
 const cachedOptions = new WeakMap();
@@ -55,6 +79,7 @@ function validateOptions(options) {
             rejectionEvent,
             logger,
             logLevel,
+            timeout,
         }) => ({
             initializeBuffer: initializeBuffer ?? optionDefaults.initializeBuffer,
             highWaterMark: highWaterMark ?? optionDefaults.highWaterMark,
@@ -67,92 +92,17 @@ function validateOptions(options) {
             pauseMethod,
             resumeMethod,
             resolutionEvent: [].concat(resolutionEvent),
-            rejectionEvent: [].concat(rejectionEvent),
+            rejectionEvent: [].concat(rejectionEvent ?? optionDefaults.rejectionEvent),
             logger,
             logLevel,
             logDebug: false,
             logInfo: false,
             logWarn: false,
             logError: false,
+            timeout,
         }))(klona(options));
 
-        if (!(Number.isInteger(validatedOptions.highWaterMark) && validatedOptions.highWaterMark > 0)) {
-
-            throw new Error('The `highWaterMark` option should be an integer greater than 0');
-
-        }
-
-        if (!(Number.isInteger(validatedOptions.lowWaterMark) && validatedOptions.lowWaterMark > 0)) {
-
-            throw new Error('The `lowWaterMark` option should be an integer greater than 0');
-
-        }
-
-        if (typeof validatedOptions.initializeBuffer !== 'boolean') {
-
-            throw new Error('The `initializeBuffer` option should be a boolean');
-
-        }
-
-        if (!(typeof validatedOptions.dataEvent === 'string')) {
-
-            throw new Error('The `dataEvent` option should be a string that represents a new data event');
-
-        }
-
-        if (validatedOptions.transform && (typeof validatedOptions.transform !== 'function')) {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `transform` option, if specified, should be a function that will transform the results of the data event prior to the results being pushed on the buffer.');
-
-        }
-
-        if (validatedOptions.preFilter && (typeof validatedOptions.preFilter !== 'function')) {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `preFilter` option, if specified, should be a function that when passed the results of data event, returns a boolean indicating if this data should be passed to the buffer.');
-
-        }
-
-        if (validatedOptions.resolutionEvent.find((d) => typeof d !== 'string')) {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `resolutionEvent` option should be a string or array of strings that represent an event signalling the emitter is done');
-
-        }
-
-        if (validatedOptions.rejectionEvent.find((d) => typeof d !== 'string')) {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `rejectionEvent` option should be a string or array of strings that represent an event signalling the emitter has errored or rejected. Defaults to `error`');
-
-        }
-
-        if (validatedOptions.pauseFunction && typeof validatedOptions.pauseFunction !== 'function') {
-
-            throw new Error('The `pauseFunction` option should be a function that will pause the data events');
-
-        }
-
-        if (validatedOptions.resumeFunction && typeof validatedOptions.resumeFunction !== 'function') {
-
-            throw new Error('The `resumeFunction` option should be a function that will resume the data events');
-
-        }
-
-        if (validatedOptions.pauseMethod && typeof validatedOptions.pauseMethod !== 'string') {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `pauseMethod` option should be a string representing the method name on the emitter that will pause the data events');
-
-        }
-
-        if (validatedOptions.resumeMethod && typeof validatedOptions.resumeMethod !== 'string') {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `resumeMethod` option should be a string representing the method name on the emitter that will resume the data events');
-
-        }
+        ow(validatedOptions, ow.object.exactShape(argValidation));
 
         if (!(!validatedOptions.resumeMethod !== !validatedOptions.resumeFunction)) {
 
@@ -165,20 +115,6 @@ function validateOptions(options) {
 
             // eslint-disable-next-line max-len
             throw new Error('You must specify either `pauseMethod` or `pauseFunction` but not both');
-
-        }
-
-        if (validatedOptions.logLevel
-            && (typeof validatedOptions.logLevel !== 'string' || !['DEBUG', 'INFO', 'WARN', 'ERROR'].includes(validatedOptions.logLevel))) {
-
-            // eslint-disable-next-line max-len
-            throw new Error('The `logLevel` option if specified should be one of either DEBUG, INFO, WARN, ERROR');
-
-        }
-
-        if (validatedOptions.logger && typeof validatedOptions.logger !== 'function') {
-
-            throw new Error('The `logger` option should function that to accept a logger object.');
 
         }
 
@@ -212,6 +148,8 @@ function validateOptions(options) {
 
 class IterableEmitter extends EventEmitter {
 
+    #active = false;
+
     #continueEvent = Symbol('continue');
 
     #done = false;
@@ -230,7 +168,7 @@ class IterableEmitter extends EventEmitter {
 
     #paused = false;
 
-    #iterating = false;
+    #iterators = 0;
 
     #id;
 
@@ -281,6 +219,8 @@ class IterableEmitter extends EventEmitter {
 
     get options() { return this.#options; }
 
+    get active() { return this.#active; }
+
     get stats() {
 
         return {
@@ -291,6 +231,7 @@ class IterableEmitter extends EventEmitter {
             totalFiltered: this.#totalFiltered,
             totalReturned: this.#totalReturned,
             error: this.error,
+            active: this.#active,
         };
 
     }
@@ -369,6 +310,11 @@ class IterableEmitter extends EventEmitter {
             handler: this.#boundHandlers.data,
         });
 
+        this.#logDebug('dataEvent listener attached', {
+            event: this.#options.dataEvent,
+            handler: this.#boundHandlers.data.name,
+        });
+
         this.#logDebug('dataEvent listener listening');
 
         this.#options.resolutionEvent.forEach((event) => {
@@ -379,6 +325,11 @@ class IterableEmitter extends EventEmitter {
                 emitter,
                 event,
                 handler: this.#boundHandlers.resolved,
+            });
+
+            this.#logDebug('resolutionEvent listener attached', {
+                event,
+                handler: this.#boundHandlers.resolved.name,
             });
 
         });
@@ -395,9 +346,39 @@ class IterableEmitter extends EventEmitter {
                 handler: this.#boundHandlers.rejected,
             });
 
+            this.#logDebug('rejectionEvent listener attached', {
+                event,
+                handler: this.#boundHandlers.rejected.name,
+            });
+
         });
 
         this.#logDebug('rejectionEvent listener(s) listening');
+
+        if (this.#options.timeout) {
+
+            setTimeout(this.#checkTimeout.bind(this), this.#options.timeout);
+
+            this.#logDebug('Timeout Set');
+
+        }
+
+    }
+
+    #checkTimeout() {
+
+        this.#logDebug('Timer Event');
+
+        if (!this.#active && !this.done) {
+
+            this.#errored('Timeout error waiting for emitter.', new Error('Timeout error waiting for emitter.'));
+
+        } else if (!this.done) {
+
+            this.#active = false;
+            setTimeout(this.#checkTimeout.bind(this), this.#options.timeout);
+
+        }
 
     }
 
@@ -429,6 +410,8 @@ class IterableEmitter extends EventEmitter {
 
         this.#logDebug('Data event', args);
 
+        this.#active = true;
+
         if (this.#paused) {
 
             this.#logWarn('Data event from paused iterator');
@@ -437,15 +420,8 @@ class IterableEmitter extends EventEmitter {
 
         if (this.#done) {
 
-            // TODO: If this is not iterating do we need to do something ?
-
-            this.#logError('dataEvent received after resolutionEvent or rejectionEvent', undefined, args);
-
-            if (this.#iterating) {
-
-                this.#rejected(new Error('dataEvent received after resolutionEvent or rejectionEvent'));
-
-            }
+            // We should never get here as the listeners are dropped when 'done'
+            this.#errored('dataEvent received while emitter in `done` state.');
 
         } else
         if (!this.#options.preFilter || this.#options.preFilter(...args)) {
@@ -478,22 +454,37 @@ class IterableEmitter extends EventEmitter {
 
     }
 
-    #rejected(error) {
+    #errored(message, error) {
 
-        this.#logError('rejectionEvent received', error);
+        const errorObject = error ?? new Error(message);
 
+        this.#logError(message, errorObject);
         this.#error = true;
-        this.#errorObject = error;
+        this.#errorObject = errorObject;
         this.#length = 0;
         this.#buffer.clear();
 
-        this.#resolved();
+        this.#resolve();
+
+        super.emit('error', this.#errorObject);
+
+    }
+
+    #rejected(error) {
+
+        this.#errored('rejectionEvent received', error);
 
     }
 
     #resolved(resolution) {
 
         this.#logInfo('resolutionEvent received', resolution);
+
+        this.#resolve();
+
+    }
+
+    #resolve() {
 
         this.#done = true;
         this.#dropListeners();
@@ -529,7 +520,7 @@ class IterableEmitter extends EventEmitter {
 
     }
 
-    #shift() {
+    #shift(iteratorId) {
 
         if (this.#paused && this.#length <= this.#options.lowWaterMark) {
 
@@ -544,7 +535,10 @@ class IterableEmitter extends EventEmitter {
 
             const event = this.#buffer.shift();
 
-            this.#logDebug('Event Shifted', event);
+            this.#logDebug('Event Shifted', {
+                event,
+                iteratorId,
+            });
 
             return event;
 
@@ -615,35 +609,39 @@ class IterableEmitter extends EventEmitter {
 
     async* [Symbol.asyncIterator]() {
 
-        this.#iterating = true;
+        // TODO: Send a warning if iterating a done iterator with zero length
 
-        this.#logInfo('Begin Iteration');
+        const iteratorId = uuid();
 
-        while (this.#error === false && (this.#done === false || (this.#done && this.#length > 0))) {
+        this.#iterators += 1;
 
-            if (this.#length === 0) {
+        this.#logInfo('Begin Iteration', { iteratorId });
+        try {
 
-                try {
+            while (this.#error === false && (this.#done === false || (this.#done && this.#length > 0))) {
+
+                if (this.#length === 0) {
 
                     // eslint-disable-next-line no-await-in-loop
-                    await pEvent(this, this.#continueEvent, { timeout: 5000 });
+                    await pEvent(this, this.#continueEvent);
 
-                } catch (e) { this.#error = true; this.#errorObject = new Error('Timeout waiting for `dataEvent`'); }
+                }
+
+                if (this.#length > 0) {
+
+                    yield this.#shift(iteratorId);
+
+                }
 
             }
 
-            if (this.#length > 0) {
+        } finally {
 
-                yield this.#shift();
+            this.#iterators -= 1;
 
-            }
+            this.#logInfo('End Iteration', { iteratorId });
 
         }
-
-        this.#iterating = false;
-
-        this.#logInfo('Complete Iteration');
-
         if (this.#error) {
 
             throw (this.#errorObject);

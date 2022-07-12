@@ -25,7 +25,7 @@ npm install --save @brick-city/iterable-emitter
 ### General
 
 
-### `new IterableEmitter (emitter:Emitter, options:iterableEmitterOptions)`
+### `new IterableEmitter (emitter:Emitter, options:[iterableEmitterOptions](#options))`
 
 **Returns:`IterableEmitter`**
 

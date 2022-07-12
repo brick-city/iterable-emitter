@@ -75,7 +75,7 @@ class NumberStream extends EventEmitter {
 
 }
 
-const a = new NumberStream({ max: 1000 });
+const a = new NumberStream({ max: 13 });
 
 a.on('data', (data) => { console.log('data', data); });
 
@@ -92,12 +92,24 @@ const b = new IterableEmitter(a, {
     transform: (r) => r * 13,
     logLevel: 'DEBUG',
     logger: (logEntry) => { console.log(logEntry); },
+    timeout: 0,
 
 });
 
-a.start();
+await sleep(1000);
 
-await sleep(10000);
+a.start();
+try {
+
+    for await (const val of b) {
+
+        console.log('a', val);
+
+        break;
+
+    }
+
+} catch (e) { console.log(e); }
 
 try {
 
@@ -105,11 +117,10 @@ try {
 
         console.log('a', val);
 
-        await sleep(0);
-
     }
 
 } catch (e) { console.log(e); }
+
 console.log('out of here');
 
 console.log(b.totalLength, b.totalReturned, b.totalFiltered, b.length);

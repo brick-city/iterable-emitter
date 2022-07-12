@@ -175,6 +175,19 @@ type iterableEmitterOptionBase = {
 
     logger?:{(arg0: iterableEmitterLogEntryObject):void};
 
+    /**
+     * 
+     * Time in milliseconds before timing out waiting for emitter
+     * 
+     */
+    timeout?:number
+
+    /**
+     * 
+     * 
+     * 
+     */
+
 }
 
  export interface iterableEmitterOptions extends iterableEmitterOptionBase {}
