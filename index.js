@@ -474,9 +474,12 @@ class IterableEmitter extends EventEmitter {
 
     }
 
-    #resolved(resolution) {
+    #resolved(...resolution) {
 
-        this.#logInfo('resolutionEvent received', resolution);
+        this.#logInfo('resolutionEvent received', {
+            resolution,
+            stat: this.stats,
+        });
 
         this.#resolve();
 
