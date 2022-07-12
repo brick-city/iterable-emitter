@@ -617,7 +617,11 @@ class IterableEmitter extends EventEmitter {
 
     async* [Symbol.asyncIterator]() {
 
-        // TODO: Send a warning if iterating a done iterator with zero length
+        if (this.#done && this.#length === 0) {
+
+            this.#logWarn('Iterating an iterator in the `done` state of zero length.');
+
+        }
 
         const iteratorId = uuid();
 
